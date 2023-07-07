@@ -23,7 +23,7 @@ class TestPodReplacer(unittest.TestCase):
         for i in 0, 1:
             pp.pod_or_container = types[i]
             for j in 0, 1:
-                s = '<<' + strings[j] + '|' + strings[(j+1)%2] + '>>'
+                s = f'<<{strings[j]}|{strings[(j + 1) % 2]}>>'
                 self.assertEqual(pp.replace_type(s), strings[i])
 
     def test_basic(self):

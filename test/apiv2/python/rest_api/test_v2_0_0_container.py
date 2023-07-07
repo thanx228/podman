@@ -44,7 +44,7 @@ class ContainerTestCase(APITestCase):
         _ = parse(r.json()["Created"])
 
         r = requests.post(
-            self.podman_url + "/v1.40/containers/create?name=topcontainer",
+            f"{self.podman_url}/v1.40/containers/create?name=topcontainer",
             json={
                 "Cmd": ["top"],
                 "Image": "alpine:latest",
@@ -62,7 +62,7 @@ class ContainerTestCase(APITestCase):
         container_id = payload["Id"]
         self.assertIsNotNone(container_id)
 
-        r = requests.get(self.podman_url + f"/v1.40/containers/{container_id}/json")
+        r = requests.get(f"{self.podman_url}/v1.40/containers/{container_id}/json")
         self.assertEqual(r.status_code, 200, r.text)
         self.assertId(r.content)
         out = r.json()
@@ -80,10 +80,10 @@ class ContainerTestCase(APITestCase):
         hc = out["Config"]["Healthcheck"]["Test"]
         self.assertListEqual(["CMD", "pidof", "top"], hc)
 
-        r = requests.post(self.podman_url + f"/v1.40/containers/{container_id}/start")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{container_id}/start")
         self.assertEqual(r.status_code, 204, r.text)
 
-        r = requests.get(self.podman_url + f"/v1.40/containers/{container_id}/json")
+        r = requests.get(f"{self.podman_url}/v1.40/containers/{container_id}/json")
         self.assertEqual(r.status_code, 200, r.text)
         out = r.json()
         state = out["State"]["Health"]
@@ -134,8 +134,11 @@ class ContainerTestCase(APITestCase):
 
     def test_attach(self):
         r = requests.post(
-            self.podman_url + "/v1.40/containers/create?name=topcontainer",
-            json={"Cmd": ["sh", "-c", "echo podman; sleep 100"], "Image": "alpine:latest"},
+            f"{self.podman_url}/v1.40/containers/create?name=topcontainer",
+            json={
+                "Cmd": ["sh", "-c", "echo podman; sleep 100"],
+                "Image": "alpine:latest",
+            },
         )
         self.assertEqual(r.status_code, 201, r.text)
         payload = r.json()
@@ -174,14 +177,14 @@ class ContainerTestCase(APITestCase):
         self.assertEqual(r.status_code, 204, r.text)
 
         requests.delete(
-            self.podman_url + f"/v1.40/containers/{payload['Id']}?force=true"
+            f"{self.podman_url}/v1.40/containers/{payload['Id']}?force=true"
         )
 
     def test_logs(self):
         r = requests.get(self.uri(self.resolve_container("/containers/{}/logs?stdout=true")))
         self.assertEqual(r.status_code, 200, r.text)
         r = requests.post(
-            self.podman_url + "/v1.40/containers/create?name=topcontainer",
+            f"{self.podman_url}/v1.40/containers/create?name=topcontainer",
             json={"Cmd": ["top", "ls"], "Image": "alpine:latest"},
         )
         self.assertEqual(r.status_code, 201, r.text)
@@ -211,7 +214,7 @@ class ContainerTestCase(APITestCase):
         name = f"Container_{random.getrandbits(160):x}"
 
         r = requests.post(
-            self.podman_url + f"/v1.40/containers/create?name={name}",
+            f"{self.podman_url}/v1.40/containers/create?name={name}",
             json={
                 "Cmd": ["cp", "/etc/motd", "/motd.size_test"],
                 "Image": "alpine:latest",
@@ -221,30 +224,30 @@ class ContainerTestCase(APITestCase):
         self.assertEqual(r.status_code, 201, r.text)
         create = r.json()
 
-        r = requests.post(self.podman_url + f"/v1.40/containers/{create['Id']}/start")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{create['Id']}/start")
         self.assertEqual(r.status_code, 204, r.text)
 
-        r = requests.post(self.podman_url + f"/v1.40/containers/{create['Id']}/wait")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{create['Id']}/wait")
         self.assertEqual(r.status_code, 200, r.text)
         wait = r.json()
         self.assertEqual(wait["StatusCode"], 0, wait["Error"])
 
-        prune = requests.post(self.podman_url + "/v1.40/containers/prune")
+        prune = requests.post(f"{self.podman_url}/v1.40/containers/prune")
         self.assertEqual(prune.status_code, 200, prune.status_code)
         prune_payload = prune.json()
         self.assertGreater(prune_payload["SpaceReclaimed"], 0)
         self.assertIn(create["Id"], prune_payload["ContainersDeleted"])
 
         # Delete any orphaned containers
-        r = requests.get(self.podman_url + "/v1.40/containers/json?all=true")
+        r = requests.get(f"{self.podman_url}/v1.40/containers/json?all=true")
         self.assertEqual(r.status_code, 200, r.text)
         for self.resolve_container in r.json():
             requests.delete(
-                self.podman_url + f"/v1.40/containers/{self.resolve_container['Id']}?force=true"
+                f"{self.podman_url}/v1.40/containers/{self.resolve_container['Id']}?force=true"
             )
 
         # Image prune here tied to containers freeing up
-        prune = requests.post(self.podman_url + "/v1.40/images/prune")
+        prune = requests.post(f"{self.podman_url}/v1.40/images/prune")
         self.assertEqual(prune.status_code, 200, prune.text)
         prune_payload = prune.json()
         self.assertGreater(prune_payload["SpaceReclaimed"], 0)
@@ -260,7 +263,7 @@ class ContainerTestCase(APITestCase):
 
     def test_status(self):
         r = requests.post(
-            self.podman_url + "/v1.40/containers/create?name=topcontainer",
+            f"{self.podman_url}/v1.40/containers/create?name=topcontainer",
             json={"Cmd": ["top"], "Image": "alpine:latest"},
         )
         self.assertEqual(r.status_code, 201, r.text)
@@ -269,29 +272,29 @@ class ContainerTestCase(APITestCase):
         self.assertIsNotNone(container_id)
 
         r = requests.get(
-            self.podman_url + "/v1.40/containers/json",
+            f"{self.podman_url}/v1.40/containers/json",
             params={"all": "true", "filters": f'{{"id":["{container_id}"]}}'},
         )
         self.assertEqual(r.status_code, 200, r.text)
         payload = r.json()
         self.assertEqual(payload[0]["Status"], "Created")
 
-        r = requests.post(self.podman_url + f"/v1.40/containers/{container_id}/start")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{container_id}/start")
         self.assertEqual(r.status_code, 204, r.text)
 
         r = requests.get(
-            self.podman_url + "/v1.40/containers/json",
+            f"{self.podman_url}/v1.40/containers/json",
             params={"all": "true", "filters": f'{{"id":["{container_id}"]}}'},
         )
         self.assertEqual(r.status_code, 200, r.text)
         payload = r.json()
         self.assertTrue(str(payload[0]["Status"]).startswith("Up"))
 
-        r = requests.post(self.podman_url + f"/v1.40/containers/{container_id}/pause")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{container_id}/pause")
         self.assertEqual(r.status_code, 204, r.text)
 
         r = requests.get(
-            self.podman_url + "/v1.40/containers/json",
+            f"{self.podman_url}/v1.40/containers/json",
             params={"all": "true", "filters": f'{{"id":["{container_id}"]}}'},
         )
         self.assertEqual(r.status_code, 200, r.text)
@@ -299,20 +302,20 @@ class ContainerTestCase(APITestCase):
         self.assertTrue(str(payload[0]["Status"]).startswith("Up"))
         self.assertTrue(str(payload[0]["Status"]).endswith("(Paused)"))
 
-        r = requests.post(self.podman_url + f"/v1.40/containers/{container_id}/unpause")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{container_id}/unpause")
         self.assertEqual(r.status_code, 204, r.text)
-        r = requests.post(self.podman_url + f"/v1.40/containers/{container_id}/stop")
+        r = requests.post(f"{self.podman_url}/v1.40/containers/{container_id}/stop")
         self.assertEqual(r.status_code, 204, r.text)
 
         r = requests.get(
-            self.podman_url + "/v1.40/containers/json",
+            f"{self.podman_url}/v1.40/containers/json",
             params={"all": "true", "filters": f'{{"id":["{container_id}"]}}'},
         )
         self.assertEqual(r.status_code, 200, r.text)
         payload = r.json()
         self.assertTrue(str(payload[0]["Status"]).startswith("Exited"))
 
-        r = requests.delete(self.podman_url + f"/v1.40/containers/{container_id}")
+        r = requests.delete(f"{self.podman_url}/v1.40/containers/{container_id}")
         self.assertEqual(r.status_code, 204, r.text)
 
     def test_top_no_stream(self):
@@ -374,16 +377,16 @@ class ContainerTestCase(APITestCase):
 
     def test_memory(self):
         r = requests.post(
-            self.podman_url + "/v1.4.0/libpod/containers/create",
+            f"{self.podman_url}/v1.4.0/libpod/containers/create",
             json={
                 "Name": "memory",
                 "Cmd": ["top"],
                 "Image": "alpine:latest",
                 "Resource_Limits": {
-                    "Memory":{
+                    "Memory": {
                         "Limit": 1000,
                     },
-                    "CPU":{
+                    "CPU": {
                         "Shares": 200,
                     },
                 },
@@ -394,7 +397,7 @@ class ContainerTestCase(APITestCase):
         container_id = payload["Id"]
         self.assertIsNotNone(container_id)
 
-        r = requests.get(self.podman_url + f"/v1.40/containers/{container_id}/json")
+        r = requests.get(f"{self.podman_url}/v1.40/containers/{container_id}/json")
         self.assertEqual(r.status_code, 200, r.text)
         self.assertId(r.content)
         out = r.json()
@@ -404,20 +407,13 @@ class ContainerTestCase(APITestCase):
     def test_host_config_port_bindings(self):
         # create a container with two ports exposed, but only one of the ports bound
         r = requests.post(
-            self.podman_url + "/v1.40/containers/create",
+            f"{self.podman_url}/v1.40/containers/create",
             json={
                 "Name": "memory",
                 "Cmd": ["top"],
                 "Image": "alpine:latest",
-                "HostConfig": {
-                    "PortBindings": {
-                        "8080": [{"HostPort": "87634"}]
-                    }
-                },
-                "ExposedPorts": {
-                    "8080": {},
-                    "8081": {}
-                }
+                "HostConfig": {"PortBindings": {"8080": [{"HostPort": "87634"}]}},
+                "ExposedPorts": {"8080": {}, "8081": {}},
             },
         )
         self.assertEqual(r.status_code, 201, r.text)

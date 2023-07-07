@@ -10,7 +10,7 @@ class VolumeTestCase(APITestCase):
     def test_volume_crud(self):
         name = f"Volume_{random.getrandbits(160):x}"
 
-        ls = requests.get(self.podman_url + "/v1.40/volumes")
+        ls = requests.get(f"{self.podman_url}/v1.40/volumes")
         self.assertEqual(ls.status_code, 200, ls.text)
 
         # See https://docs.docker.com/engine/api/v1.40/#operation/VolumeList
@@ -24,7 +24,9 @@ class VolumeTestCase(APITestCase):
         for key in required_keys:
             self.assertIn(key, volumes)
 
-        create = requests.post(self.podman_url + "/v1.40/volumes/create", json={"Name": name})
+        create = requests.post(
+            f"{self.podman_url}/v1.40/volumes/create", json={"Name": name}
+        )
         self.assertEqual(create.status_code, 201, create.text)
 
         # See https://docs.docker.com/engine/api/v1.40/#operation/VolumeCreate
@@ -44,7 +46,7 @@ class VolumeTestCase(APITestCase):
             self.assertIn(k, volume)
         self.assertEqual(volume["Name"], name)
 
-        inspect = requests.get(self.podman_url + f"/v1.40/volumes/{name}")
+        inspect = requests.get(f"{self.podman_url}/v1.40/volumes/{name}")
         self.assertEqual(inspect.status_code, 200, inspect.text)
 
         volume = inspect.json()
@@ -52,18 +54,20 @@ class VolumeTestCase(APITestCase):
         for k in required_keys:
             self.assertIn(k, volume)
 
-        rm = requests.delete(self.podman_url + f"/v1.40/volumes/{name}")
+        rm = requests.delete(f"{self.podman_url}/v1.40/volumes/{name}")
         self.assertEqual(rm.status_code, 204, rm.text)
 
         # recreate volume with data and then prune it
-        r = requests.post(self.podman_url + "/v1.40/volumes/create", json={"Name": name})
+        r = requests.post(
+            f"{self.podman_url}/v1.40/volumes/create", json={"Name": name}
+        )
         self.assertEqual(create.status_code, 201, create.text)
 
         create = r.json()
         with open(os.path.join(create["Mountpoint"], "test_prune"), "w") as file:
             file.writelines(["This is a test\n", "This is a good test\n"])
 
-        prune = requests.post(self.podman_url + "/v1.40/volumes/prune")
+        prune = requests.post(f"{self.podman_url}/v1.40/volumes/prune")
         self.assertEqual(prune.status_code, 200, prune.text)
 
         payload = prune.json()
@@ -78,12 +82,12 @@ class VolumeTestCase(APITestCase):
         }
 
         create = requests.post(
-            self.podman_url + "/v4.0.0/libpod/volumes/create",
+            f"{self.podman_url}/v4.0.0/libpod/volumes/create",
             json={"name": name, "label": expected},
         )
         self.assertEqual(create.status_code, 201, create.text)
 
-        inspect = requests.get(self.podman_url + f"/v4.0.0/libpod/volumes/{name}/json")
+        inspect = requests.get(f"{self.podman_url}/v4.0.0/libpod/volumes/{name}/json")
         self.assertEqual(inspect.status_code, 200, inspect.text)
 
         volume = inspect.json()
@@ -99,12 +103,12 @@ class VolumeTestCase(APITestCase):
         }
 
         create = requests.post(
-            self.podman_url + "/v4.0.0/libpod/volumes/create",
+            f"{self.podman_url}/v4.0.0/libpod/volumes/create",
             json={"name": name, "labels": expected},
         )
         self.assertEqual(create.status_code, 201, create.text)
 
-        inspect = requests.get(self.podman_url + f"/v4.0.0/libpod/volumes/{name}/json")
+        inspect = requests.get(f"{self.podman_url}/v4.0.0/libpod/volumes/{name}/json")
         self.assertEqual(inspect.status_code, 200, inspect.text)
 
         volume = inspect.json()
@@ -114,7 +118,7 @@ class VolumeTestCase(APITestCase):
     def test_volume_label_override(self):
         name = f"Volume_{random.getrandbits(160):x}"
         create = requests.post(
-            self.podman_url + "/v4.0.0/libpod/volumes/create",
+            f"{self.podman_url}/v4.0.0/libpod/volumes/create",
             json={
                 "Name": name,
                 "Label": {
@@ -127,7 +131,7 @@ class VolumeTestCase(APITestCase):
         )
         self.assertEqual(create.status_code, 201, create.text)
 
-        inspect = requests.get(self.podman_url + f"/v4.0.0/libpod/volumes/{name}/json")
+        inspect = requests.get(f"{self.podman_url}/v4.0.0/libpod/volumes/{name}/json")
         self.assertEqual(inspect.status_code, 200, inspect.text)
 
         volume = inspect.json()

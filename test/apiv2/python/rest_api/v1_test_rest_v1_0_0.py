@@ -17,7 +17,7 @@ PODMAN_URL = "http://localhost:8080"
 
 
 def _url(path):
-    return PODMAN_URL + "/v1.0.0/libpod" + path
+    return f"{PODMAN_URL}/v1.0.0/libpod{path}"
 
 
 def podman():
@@ -32,7 +32,7 @@ def ctnr(path):
     try:
         ctnrs = json.loads(r.text)
     except Exception as e:
-        sys.stderr.write("Bad container response: {}/{}".format(r.text, e))
+        sys.stderr.write(f"Bad container response: {r.text}/{e}")
         raise e
     return path.format(ctnrs[0]["Id"])
 
@@ -84,7 +84,9 @@ class TestApi(unittest.TestCase):
             print("\nService Stderr:\n" + stderr.decode("utf-8"))
 
         if TestApi.podman.returncode > 0:
-            sys.stderr.write("podman exited with error code {}\n".format(TestApi.podman.returncode))
+            sys.stderr.write(
+                f"podman exited with error code {TestApi.podman.returncode}\n"
+            )
             sys.exit(2)
 
         return super().tearDownClass()
@@ -211,10 +213,10 @@ class TestApi(unittest.TestCase):
         self.assertFalse(search.is_alive(), "/images/search took too long")
 
     def test_ping(self):
-        r = requests.get(PODMAN_URL + "/_ping")
+        r = requests.get(f"{PODMAN_URL}/_ping")
         self.assertEqual(r.status_code, 200, r.text)
 
-        r = requests.head(PODMAN_URL + "/_ping")
+        r = requests.head(f"{PODMAN_URL}/_ping")
         self.assertEqual(r.status_code, 200, r.text)
 
         r = requests.get(_url("/_ping"))

@@ -14,7 +14,7 @@ class SystemTestCase(APITestCase):
         self.assertIsNotNone(r.content)
         _ = r.json()
 
-        r = requests.get(self.podman_url + "/v1.40/info")
+        r = requests.get(f"{self.podman_url}/v1.40/info")
         self.assertEqual(r.status_code, 200, r.text)
         self.assertIsNotNone(r.content)
         response = r.json()
@@ -63,12 +63,12 @@ class SystemTestCase(APITestCase):
             for k in required_headers:
                 self.assertIn(k, req.headers)
 
-        r = requests.get(self.podman_url + "/_ping")
+        r = requests.get(f"{self.podman_url}/_ping")
         self.assertEqual(r.status_code, 200, r.text)
         self.assertEqual(r.text, "OK")
         check_headers(r)
 
-        r = requests.head(self.podman_url + "/_ping")
+        r = requests.head(f"{self.podman_url}/_ping")
         self.assertEqual(r.status_code, 200, r.text)
         self.assertEqual(r.text, "")
         check_headers(r)
@@ -84,7 +84,7 @@ class SystemTestCase(APITestCase):
         check_headers(r)
 
     def test_version(self):
-        r = requests.get(self.podman_url + "/v1.40/version")
+        r = requests.get(f"{self.podman_url}/v1.40/version")
         self.assertEqual(r.status_code, 200, r.text)
 
         r = requests.get(self.uri("/version"))
@@ -100,7 +100,7 @@ class SystemTestCase(APITestCase):
         self.assertIsNotNone(oci_name, "OCI Runtime not found in version components.")
 
     def test_df(self):
-        r = requests.get(self.podman_url + "/v1.40/system/df")
+        r = requests.get(f"{self.podman_url}/v1.40/system/df")
         self.assertEqual(r.status_code, 200, r.text)
 
         obj = r.json()

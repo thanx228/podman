@@ -62,11 +62,11 @@ class APITestCase(unittest.TestCase):
 
     @staticmethod
     def uri(path):
-        return APITestCase.PODMAN_URL + "/v2.0.0/libpod" + path
+        return f"{APITestCase.PODMAN_URL}/v2.0.0/libpod{path}"
 
     @staticmethod
     def compat_uri(path):
-        return APITestCase.PODMAN_URL + "/v3.0.0/" + path
+        return f"{APITestCase.PODMAN_URL}/v3.0.0/{path}"
 
     def resolve_container(self, path):
         """Find 'first' container and return 'Id' formatted into given URI path."""
@@ -77,7 +77,7 @@ class APITestCase(unittest.TestCase):
         except Exception as e:
             msg = f"Bad container response: {e}"
             if r is not None:
-                msg += ": " + r.text
+                msg += f": {r.text}"
             raise self.failureException(msg)
         return path.format(containers[0]["Id"])
 

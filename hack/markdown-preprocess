@@ -36,17 +36,16 @@ class Preprocessor():
 
         # foo.md.in -> foo.md -- but always write to a tmpfile
         outfile = os.path.splitext(infile)[0]
-        outfile_tmp = outfile + '.tmp.' + str(os.getpid())
+        outfile_tmp = f'{outfile}.tmp.{os.getpid()}'
 
-        with open(infile, 'r', encoding='utf-8') as fh_in, open(outfile_tmp, 'w', encoding='utf-8', newline='\n') as fh_out:
+        with (open(infile, 'r', encoding='utf-8') as fh_in, open(outfile_tmp, 'w', encoding='utf-8', newline='\n') as fh_out):
             for line in fh_in:
                 # '@@option foo' -> include file options/foo.md
                 if line.startswith('@@option '):
                     _, optionname = line.strip().split(" ")
-                    optionfile = os.path.join("options", optionname + '.md')
+                    optionfile = os.path.join("options", f'{optionname}.md')
                     self.track_optionfile(optionfile)
                     self.insert_file(fh_out, optionfile)
-                # '@@include relative-path/must-exist.md'
                 elif line.startswith('@@include '):
                     _, path = line.strip().split(" ")
                     self.insert_file(fh_out, path)
@@ -70,10 +69,10 @@ class Preprocessor():
         cross-referencing all the man pages in which they're used.
         """
         for optionfile in self.used_by:
-            tmpfile = optionfile + '.tmp.' + str(os.getpid())
-            with open(optionfile, 'r', encoding='utf-8') as fh_in, open(tmpfile, 'w', encoding='utf-8', newline='\n') as fh_out:
+            tmpfile = f'{optionfile}.tmp.{os.getpid()}'
+            with (open(optionfile, 'r', encoding='utf-8') as fh_in, open(tmpfile, 'w', encoding='utf-8', newline='\n') as fh_out):
                 fh_out.write("####> This option file is used in:\n")
-                used_by = ', '.join(x for x in self.used_by[optionfile])
+                used_by = ', '.join(self.used_by[optionfile])
                 fh_out.write(f"####>   podman {used_by}\n")
                 fh_out.write("####> If file is edited, make sure the changes\n")
                 fh_out.write("####> are applicable to all of those.\n")
@@ -145,16 +144,11 @@ class Preprocessor():
                 if re.match('.*pod([^m]|$)', rhs, re.IGNORECASE):
                     raise Exception(f"'{matchobj[0]}' matches 'pod' in both left and right sides")
                 # Only left-hand side has "pod"
-                if self.pod_or_container == 'pod':
-                    return lhs
-                return rhs
-
+                return lhs if self.pod_or_container == 'pod' else rhs
             # 'pod' not in lhs, must be in rhs
             if not re.match('.*pod([^m]|$)', rhs, re.IGNORECASE):
                 raise Exception(f"'{matchobj[0]}' does not match 'pod' in either side")
-            if self.pod_or_container == 'pod':
-                return rhs
-            return lhs
+            return rhs if self.pod_or_container == 'pod' else lhs
 
         return re.sub(r'<<[^\|>]*\|[^\|>]*>>', replwith, line)
 

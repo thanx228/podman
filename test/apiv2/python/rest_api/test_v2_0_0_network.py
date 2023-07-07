@@ -11,12 +11,13 @@ class NetworkTestCase(APITestCase):
     def test_connect(self):
         """Create network and container then connect to network"""
         net_default = requests.post(
-            self.podman_url + "/v1.40/networks/create", json={"Name": "TestDefaultNetwork"}
+            f"{self.podman_url}/v1.40/networks/create",
+            json={"Name": "TestDefaultNetwork"},
         )
         self.assertEqual(net_default.status_code, 201, net_default.text)
 
         create = requests.post(
-            self.podman_url + "/v1.40/containers/create?name=postCreateConnect",
+            f"{self.podman_url}/v1.40/containers/create?name=postCreateConnect",
             json={
                 "Cmd": ["top"],
                 "Image": "alpine:latest",
@@ -42,11 +43,13 @@ class NetworkTestCase(APITestCase):
         self.assertId(create.content)
 
         payload = create.json()
-        start = requests.post(self.podman_url + f"/v1.40/containers/{payload['Id']}/start")
+        start = requests.post(
+            f"{self.podman_url}/v1.40/containers/{payload['Id']}/start"
+        )
         self.assertEqual(start.status_code, 204, start.text)
 
         connect = requests.post(
-            self.podman_url + "/v1.40/networks/TestDefaultNetwork/connect",
+            f"{self.podman_url}/v1.40/networks/TestDefaultNetwork/connect",
             json={"Container": payload["Id"]},
         )
         self.assertEqual(connect.status_code, 200, connect.text)
@@ -76,12 +79,13 @@ class NetworkTestCase(APITestCase):
     def test_create(self):
         """Create network and connect container during create"""
         net = requests.post(
-            self.podman_url + "/v1.40/networks/create", json={"Name": "TestNetwork"}
+            f"{self.podman_url}/v1.40/networks/create",
+            json={"Name": "TestNetwork"},
         )
         self.assertEqual(net.status_code, 201, net.text)
 
         create = requests.post(
-            self.podman_url + "/v1.40/containers/create?name=postCreate",
+            f"{self.podman_url}/v1.40/containers/create?name=postCreate",
             json={
                 "Cmd": ["date"],
                 "Image": "alpine:latest",
@@ -104,7 +108,9 @@ class NetworkTestCase(APITestCase):
         )
     def test_inspect(self):
         name = f"Network_{random.getrandbits(160):x}"
-        create = requests.post(self.podman_url + "/v1.40/networks/create", json={"Name": name})
+        create = requests.post(
+            f"{self.podman_url}/v1.40/networks/create", json={"Name": name}
+        )
         self.assertEqual(create.status_code, 201, create.text)
         self.assertId(create.content)
 
@@ -113,20 +119,18 @@ class NetworkTestCase(APITestCase):
         self.assertNotEqual(net["Id"], name)
         ident = net["Id"]
 
-        ls = requests.get(self.podman_url + "/v1.40/networks")
+        ls = requests.get(f"{self.podman_url}/v1.40/networks")
         self.assertEqual(ls.status_code, 200, ls.text)
 
         networks = ls.json()
         self.assertIsInstance(networks, list)
 
-        found = False
-        for net in networks:
-            if net["Name"] == name:
-                found = True
-                break
+        found = any(net["Name"] == name for net in networks)
         self.assertTrue(found, f"Network '{name}' not found")
 
-        inspect = requests.get(self.podman_url + f"/v1.40/networks/{ident}?verbose=false&scope=local")
+        inspect = requests.get(
+            f"{self.podman_url}/v1.40/networks/{ident}?verbose=false&scope=local"
+        )
         self.assertEqual(inspect.status_code, 200, inspect.text)
 
 
@@ -135,7 +139,9 @@ class NetworkTestCase(APITestCase):
 
         # Cannot test for 0 existing networks because default "podman" network always exists
 
-        create = requests.post(self.podman_url + "/v1.40/networks/create", json={"Name": name})
+        create = requests.post(
+            f"{self.podman_url}/v1.40/networks/create", json={"Name": name}
+        )
         self.assertEqual(create.status_code, 201, create.text)
         self.assertId(create.content)
 
@@ -144,36 +150,32 @@ class NetworkTestCase(APITestCase):
         self.assertNotEqual(net["Id"], name)
         ident = net["Id"]
 
-        ls = requests.get(self.podman_url + "/v1.40/networks")
+        ls = requests.get(f"{self.podman_url}/v1.40/networks")
         self.assertEqual(ls.status_code, 200, ls.text)
 
         networks = ls.json()
         self.assertIsInstance(networks, list)
 
-        found = False
-        for net in networks:
-            if net["Name"] == name:
-                found = True
-                break
+        found = any(net["Name"] == name for net in networks)
         self.assertTrue(found, f"Network '{name}' not found")
 
-        inspect = requests.get(self.podman_url + f"/v1.40/networks/{ident}")
+        inspect = requests.get(f"{self.podman_url}/v1.40/networks/{ident}")
         self.assertEqual(inspect.status_code, 200, inspect.text)
         self.assertIsInstance(inspect.json(), dict)
 
-        inspect = requests.delete(self.podman_url + f"/v1.40/networks/{ident}")
+        inspect = requests.delete(f"{self.podman_url}/v1.40/networks/{ident}")
         self.assertEqual(inspect.status_code, 204, inspect.text)
-        inspect = requests.get(self.podman_url + f"/v1.40/networks/{ident}")
+        inspect = requests.get(f"{self.podman_url}/v1.40/networks/{ident}")
         self.assertEqual(inspect.status_code, 404, inspect.text)
 
         # network prune
         prune_name = f"Network_{random.getrandbits(160):x}"
         prune_create = requests.post(
-            self.podman_url + "/v1.40/networks/create", json={"Name": prune_name}
+            f"{self.podman_url}/v1.40/networks/create", json={"Name": prune_name}
         )
         self.assertEqual(create.status_code, 201, prune_create.text)
 
-        prune = requests.post(self.podman_url + "/v1.40/networks/prune")
+        prune = requests.post(f"{self.podman_url}/v1.40/networks/prune")
         self.assertEqual(prune.status_code, 200, prune.text)
         self.assertTrue(prune_name in prune.json()["NetworksDeleted"])
 

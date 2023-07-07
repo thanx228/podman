@@ -31,9 +31,11 @@ class TestDependsOn(TestCaseBase):
 
     def setUp(self):
         super().setUp()
-        self.ALL_TASK_NAMES = set([key.replace('_task', '')
-                                   for key, _ in self.CIRRUS_YAML.items()
-                                   if key.endswith('_task')])
+        self.ALL_TASK_NAMES = {
+            key.replace('_task', '')
+            for key, _ in self.CIRRUS_YAML.items()
+            if key.endswith('_task')
+        }
 
     def test_dicts(self):
         """Expected dictionaries are present and non-empty"""
