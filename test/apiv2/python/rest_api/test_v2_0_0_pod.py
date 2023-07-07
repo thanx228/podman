@@ -9,8 +9,7 @@ class TestApi(APITestCase):
     def test_pod_start_conflict(self):
         """Verify issue #8865"""
 
-        pod_name = list()
-        pod_name.append(f"Pod_{random.getrandbits(160):x}")
+        pod_name = [f"Pod_{random.getrandbits(160):x}"]
         pod_name.append(f"Pod_{random.getrandbits(160):x}")
 
         r = requests.post(

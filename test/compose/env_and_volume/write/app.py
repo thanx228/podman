@@ -4,9 +4,8 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-    f = open("/data/message", "w")
-    f.write(os.getenv("PODMAN_MSG"))
-    f.close()
+    with open("/data/message", "w") as f:
+        f.write(os.getenv("PODMAN_MSG"))
     return "done"
 
 if __name__ == '__main__':
